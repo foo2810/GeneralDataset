@@ -1,0 +1,34 @@
+title General Dataset
+
+class GeneralDatasetMixin {
+    +abstract load_raw_data()
+    +abstract getter()
+    +trans_each_libraries()
+}
+
+class GeneralDataset {
+    +load_raw_data()
+    +getter()
+}
+
+class keras.utils.Sequence {
+}
+
+class KerasDataset {
+}
+
+class PytorchDataset {
+}
+
+class ChainerDataset {
+}
+
+class NpDataset {
+}
+
+GeneralDataset --|> GeneralDatasetMixin
+KerasDataset -- GeneralDataset
+KerasDataset --|> keras.utils.Sequence
+PytorchDataset -- GeneralDataset
+ChainerDataset -- GeneralDataset
+NpDataset -- GeneralDataset
