@@ -3,6 +3,7 @@ title General Dataset
 class GeneralDatasetMixin {
     +abstract load_raw_data()
     +abstract getter()
+    +abstract __len__()
     +trans_each_libraries()
 }
 
