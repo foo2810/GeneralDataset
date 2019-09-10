@@ -1,0 +1,46 @@
+title General Dataset
+
+@startuml General Dataset Model
+
+class GeneralDatasetChain {
+    + load()
+    + preprocess()
+    + getter()
+    + __len__()
+    + trans_each_libraries()
+}
+
+note bottom of GeneralDatasetChain
+    このクラスのインスタンスは，同じクラスの別インスタンスから渡されるデータを
+    加工したうえでユーザまたは次のインスタンスにデータを渡す．
+    こうすることで前処理を段階的に行いつつ，その過程のデータも取り出せるようにする．
+    イメージ的にはファイルをルートとして，計算グラフにデータを流し，段階的に前処理を
+    行っていく感じ．
+endnote
+
+class KerasDataset {
+}
+
+class PytorchDataset {
+}
+
+class ChainerDataset {
+}
+
+class NpDataset {
+}
+
+GeneralDatasetChain -down- GeneralDatasetChain : 連鎖
+
+KerasDataset -down- GeneralDatasetChain : 変換
+KerasDataset -up-|> keras.utils.Sequence
+
+PytorchDataset -down- GeneralDatasetChain : 変換
+PytorchDataset -up-|> torchvision.Dataset
+
+ChainerDataset -down- GeneralDatasetChain : 変換
+ChainerDataset -up-|> chainer.dataset
+
+NpDataset -down- GeneralDatasetChain : 変換(いらない気がする)
+
+@enduml
