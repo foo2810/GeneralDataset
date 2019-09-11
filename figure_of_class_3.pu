@@ -1,0 +1,48 @@
+title General Dataset
+
+@startuml General Dataset Model
+
+class GeneralDataset {
+    + load()
+    + preprocess()
+    + getter()
+    + __len__()
+    + trans_each_libraries()
+}
+
+class PreprocessMixin {
+    + forward()
+}
+
+note bottom of GeneralDataset
+endnote
+
+class KerasDataset {
+}
+
+class PytorchDataset {
+}
+
+class ChainerDataset {
+}
+
+class NpDataset {
+}
+
+
+KerasDataset -down- GeneralDataset : 変換
+KerasDataset -up-|> keras.utils.Sequence
+
+PytorchDataset -down- GeneralDataset : 変換
+PytorchDataset -up-|> torchvision.Dataset
+
+ChainerDataset -down- GeneralDataset : 変換
+ChainerDataset -up-|> chainer.dataset
+
+NpDataset -down- GeneralDataset : 変換(いらない気がする)
+
+Preprocess --|> PreprocessMixin
+
+GeneralDataset "1" -right- "*" Preprocess
+
+@enduml
