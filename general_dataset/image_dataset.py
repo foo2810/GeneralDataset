@@ -1,6 +1,6 @@
 # Image Dataset
 
-from general_dataset.base import GeneralDatasetChainMixin
+from general_dataset.base import GeneralDatasetChain, GeneralDatasetRoot
 
 import numpy as np
 from PIL import Image
@@ -11,7 +11,7 @@ import tarfile
 from urllib.request import urlretrieve
 
 
-class STL10(GeneralDatasetChainMixin):
+class STL10(GeneralDatasetRoot):
     def __init__(self, kind="train", save_dir="./"):
         super().__init__()
 
@@ -64,16 +64,12 @@ class STL10(GeneralDatasetChainMixin):
     def __getitem__(self, idx):
         if idx < 0 or idx >= len(self):
             raise IndexError(idx)
-        return self.labeled_images[idx], self.labels[idx]
+        #return self.labeled_images[idx], self.labels[idx]
+        return self.labeled_images[idx][np.newaxis,...], self.labels[idx][np.newaxis,...]
     
     def __len__(self):
         return len(self.labeled_images)
     
-    def __iter__(self):
-        for i in range(len(self)):
-            print("root")
-            yield self.labeled_images[i], self.labels[i]
-
 
 # クラスごとにディレクトリで分けられている構造のデータセットからパスを出力するデータセットを作成
 # shuffle = Falseの場合，出力順はクラス順になる．(A, A, ..., A, B, ..., B, ..., E)
@@ -90,7 +86,7 @@ directory + - class_A + - img_A1
           :
           + - class_E
 """
-class ImagePathDatasetChain(GeneralDatasetChainMixin):
+class ImagePathDataset(GeneralDatasetRoot):
     def __init__(self, directory, shuffle=False):
         super().__init__()
 
@@ -127,43 +123,62 @@ class ImagePathDatasetChain(GeneralDatasetChainMixin):
     def __getitem__(self, idx):
         if idx < 0 or idx >= self.n_instances:
             raise IndexError(idx)
-        return self.instance_list[idx], self.label_list[idx]
+        return self.instance_list[idx][np.newaxis,:,:,:], self.label_list[idx][np.newaxis,:,:,:]
     
     def __len__(self):
         return self.n_instances
     
-    def __iter__(self):
-        for i in range(self.n_instances):
-            yield self.instance_list[i], self.label_list[i]
-
-class ImageDatasetChain(GeneralDatasetChainMixin):
+class ImageDataset(GeneralDatasetChain):
     def __init__(self):
         super().__init__()
 
-    def filter(self, x):
-        return [np.array(Image.open(x))]
+    def forward(self, x_y):
+        x, y = x_y
+        tmp = []
+        for xi in x:
+            tmp.append(np.array(Image.open(xi)))
+        return np.concatenate(tmp), y
 
 from general_dataset.preprocess import Rescale, Shift
-class AugmentedImgDataset1(GeneralDatasetChainMixin):
+class AugmentedImgDataset1(GeneralDatasetChain):
     def __init__(self):
         super().__init__()
+        self.preprocess_fn = np.vectorize(Rescale(1/255.))
 
-        self.preprocess_fn = Rescale(1/255.)
+    def forward(self, x_y):
+        x, y = x_y
+        return self.preprocess_fn(x), y
 
-    def filter(self, x):
-        return [self.preprocess_fn(x)]
-
-class AugmentedImgDataset2(GeneralDatasetChainMixin):
+class AugmentedImgDataset2(GeneralDatasetChain):
     def __init__(self):
         super().__init__()
+        #self.preprocess_fn = np.vectorize(Shift(wShiftRange=0.5, hShiftRange=0.5))
         self.preprocess_fn = Shift(wShiftRange=0.5, hShiftRange=0.5)
 
-    def filter(self, x):
-        return [self.preprocess_fn(x)]
+    def forward(self, x_y):
+        x, y = x_y
+        tmp_x = []
+        for xi, _ in zip(x, y):
+            tmp_x.append(self.preprocess_fn(xi))
 
-class ExpandImageDataset(GeneralDatasetChainMixin):
+        if len(x) == 1:
+            new_x = tmp_x[-1][np.newaxis,...]
+        elif len(x) > 1:
+            new_x = np.concatenate(tmp_x)
+        else:
+            raise RuntimeError("len(x) <= 0 - AugmentedImgDataset2")
+
+        return new_x, y
+
+class ExpandImageDataset(GeneralDatasetChain):
     def __init__(self):
         super().__init__()
 
-    def filter(self, x):
-        return [x, x]
+    def forward(self, x_y):
+        x, y = x_y
+        tmp_x = []
+        tmp_y = []
+        for xi, yi in zip(x, y):
+            tmp_x += [xi, xi]
+            tmp_y += [yi, yi]
+        return np.concatenate(tmp_x), np.concatenate(tmp_y)
