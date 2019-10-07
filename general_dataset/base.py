@@ -1,5 +1,7 @@
 # 
 
+import numpy as np
+
 class GeneralDatasetChainMixin:
     def __init__(self):
         self.prev = None
@@ -21,15 +23,17 @@ class GeneralDatasetChainMixin:
         raise NotImplementedError
 
     def __getitem__(self, idx):
-        print(type(self))
-        prev_idx = idx // self.instance_range
-        prev_out = self.prev[prev_idx]
+        if type(idx) == slice:
+            ...
+        else:
+            prev_idx = idx // self.instance_range
+            prev_out = self.prev[prev_idx]
 
-        """ ラベルがない場合はどうするか？ """
-        prev_data, prev_label = prev_out
+            """ ラベルがない場合はどうするか？ """
+            prev_data, prev_label = prev_out
 
-        out_buffer = self.filter(prev_data)
-        return out_buffer[idx % self.instance_range], prev_label
+            out_buffer = self.filter(prev_data)
+            return out_buffer[idx % self.instance_range], prev_label
 
     def __len__(self):
         return len(self.prev) * self.instance_range
@@ -44,3 +48,25 @@ class GeneralDatasetChainMixin:
                 for data in self.filter(prev_data):
                     yield data, prev_label
 
+
+from keras.utils.data_utils import Sequence
+class KerasDatasetBase(Sequence):
+    def __init__(self, gdataset, batch_size=32):
+        self.gdataset = gdataset
+        self.batch_size = batch_size
+    
+    @property
+    def nfiles(self):
+        return len(self.gdataset)
+    
+    def __getitem__(self, idx):
+        X = []
+        labels = []
+        for i in range(self.batch_size):
+            x, l = self.gdataset[i+self.batch_size*idx]
+            X.append(x)
+            labels.append(l)
+        return np.array(X), np.array(labels)
+    
+    def __len__(self):
+        return self.nfiles // self.batch_size

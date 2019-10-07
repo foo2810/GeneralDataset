@@ -6,6 +6,74 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 
+import sys
+import tarfile
+from urllib.request import urlretrieve
+
+
+class STL10(GeneralDatasetChainMixin):
+    def __init__(self, kind="train", save_dir="./"):
+        super().__init__()
+
+        self.DATA_URL = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
+        self.save_dir = Path(save_dir)
+        self.bin_name = "stl10_binary"
+
+        if kind in ("train", "test"):
+            self.kind = kind
+        else:
+            # あまりよくない気もする
+            raise ValueError("{} is invalid kind.")
+
+        self.load_data()
+
+    def load_data(self):
+        self._download_and_extract()
+
+        labeled_images_fpath = self.save_dir / "train_X.bin"
+        labels_fpath = self.save_dir / "train_y.bin"
+        #unlabeled_images_fpath = self.save_dir / "unlabeled_X.bin"
+
+        with labeled_images_fpath.open("rb") as st:
+            labeled_images = np.fromfile(st, dtype=np.uint8)
+            labeled_images = labeled_images.reshape(-1, 3, 96, 96)
+            labeled_images = np.transpose(labeled_images, (0, 3, 2, 1))
+        
+        with labels_fpath.open("rb") as st:
+            labels = np.fromfile(st, dtype=np.uint8)
+            labels = labels.reshape(-1, 1) - 1
+        
+        self.labeled_images = labeled_images
+        self.labels = labels
+
+    def _download_and_extract(self):
+        if not self.save_dir.exists():
+            raise FileNotFoundError("{} not found".format(self.save_dir))
+
+        dl_fpath = self.save_dir / self.bin_name
+        if not dl_fpath.exists():
+            def __progress(count, block_size, total_size):
+                sys.stdout.write('\rDownloading %s %.2f%%' % (str(dl_fpath), float(count * block_size) / float(total_size) * 100.0))
+                sys.stdout.flush()
+            
+            fpath, _ = urlretrieve(self.DATA_URL, str(dl_fpath), reporthook=__progress)
+            print("Downloaded {}".format(fpath))
+            with tarfile.open(fpath, "r:gz") as tar:
+                tar.extractall(path=str(self.save_dir))
+
+    def __getitem__(self, idx):
+        if idx < 0 or idx >= len(self):
+            raise IndexError(idx)
+        return self.labeled_images[idx], self.labels[idx]
+    
+    def __len__(self):
+        return len(self.labeled_images)
+    
+    def __iter__(self):
+        for i in range(len(self)):
+            print("root")
+            yield self.labeled_images[i], self.labels[i]
+
 
 # クラスごとにディレクトリで分けられている構造のデータセットからパスを出力するデータセットを作成
 # shuffle = Falseの場合，出力順はクラス順になる．(A, A, ..., A, B, ..., B, ..., E)
@@ -58,7 +126,7 @@ class ImagePathDatasetChain(GeneralDatasetChainMixin):
 
     def __getitem__(self, idx):
         if idx < 0 or idx >= self.n_instances:
-            raise IndexError
+            raise IndexError(idx)
         return self.instance_list[idx], self.label_list[idx]
     
     def __len__(self):

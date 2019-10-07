@@ -8,6 +8,7 @@ GeneralDatasetのinstance_rangeがどうなっているかまだ未確認
 """
 
 from general_dataset.base import GeneralDatasetChainMixin
+from general_dataset.base import KerasDatasetBase
 
 class _NodeChain(GeneralDatasetChainMixin):
     def __init__(self):
@@ -24,7 +25,8 @@ class GeneralDataset(GeneralDatasetChainMixin):
 
         self.in_chain = in_chain
         if out_chain is None:
-            self.out_chain = in_chain
+            tmp = _NodeChain()(in_chain)
+            self.out_chain = tmp
         else:
             self.out_chain = out_chain
         
@@ -83,7 +85,16 @@ class GeneralDataset(GeneralDatasetChainMixin):
         return self
 
     def apply(self, kind, batch_size):
-        pass
+        if kind == "keras":
+            applied_dataset = KerasDatasetBase(self, batch_size=batch_size)
+        elif kind == "pytorch":
+            ...
+        elif kind == "chainer":
+            ...
+        else:
+            raise ValueError("{} is unknown kind.".format(kind))
+
+        return applied_dataset
     
     def __getitem__(self, idx):
         print(type(self))
