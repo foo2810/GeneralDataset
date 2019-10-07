@@ -134,7 +134,6 @@ class ImagePathDatasetChain(GeneralDatasetChainMixin):
     
     def __iter__(self):
         for i in range(self.n_instances):
-            print("root")
             yield self.instance_list[i], self.label_list[i]
 
 class ImageDatasetChain(GeneralDatasetChainMixin):

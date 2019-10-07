@@ -5,6 +5,10 @@
 GeneralDasetとの接続やデータの伝播周りがかなり複雑になってしまったので整理する必要あり
 多分Chainを種類を一意に識別するidが必要 <- 複雑さを軽減
 GeneralDatasetのinstance_rangeがどうなっているかまだ未確認
+
+One-hotベクトルへの対応方法を検討
+ラベルに対するfilter処理の検討
+ラベルの分岐を許容するか
 """
 
 from general_dataset.base import GeneralDatasetChainMixin
@@ -97,7 +101,6 @@ class GeneralDataset(GeneralDatasetChainMixin):
         return applied_dataset
     
     def __getitem__(self, idx):
-        print(type(self))
         return self.out_chain[idx]
 
     def __len__(self):
