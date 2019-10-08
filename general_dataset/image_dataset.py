@@ -1,6 +1,6 @@
 # Image Dataset
 
-from general_dataset.base import GeneralDatasetChain, GeneralDatasetRoot
+from general_dataset.mixin import GeneralDatasetChainMixin, GeneralDatasetRootMixin, GeneralDatasetMixin
 
 import numpy as np
 from PIL import Image
@@ -11,7 +11,7 @@ import tarfile
 from urllib.request import urlretrieve
 
 
-class STL10(GeneralDatasetRoot):
+class STL10(GeneralDatasetRootMixin):
     def __init__(self, kind="train", save_dir="./"):
         super().__init__()
 
@@ -60,7 +60,7 @@ class STL10(GeneralDatasetRoot):
             print("Downloaded {}".format(fpath))
             with tarfile.open(fpath, "r:gz") as tar:
                 tar.extractall(path=str(self.save_dir))
-
+    
     def __getitem__(self, idx):
         if idx < 0 or idx >= len(self):
             raise IndexError(idx)
@@ -69,6 +69,17 @@ class STL10(GeneralDatasetRoot):
     
     def __len__(self):
         return len(self.labeled_images)
+
+class STL10Dataset(GeneralDatasetMixin):
+    def __init__(self, kind="train", save_dir="./"):
+        self.kind = kind
+        self.save_dir = save_dir
+
+        self.stl10 = STL10(kind, save_dir)
+        super().__init__(self.stl10)
+    
+    def get_item(self, root_idx):
+        return self.stl10[root_idx]
     
 
 # クラスごとにディレクトリで分けられている構造のデータセットからパスを出力するデータセットを作成
@@ -86,7 +97,7 @@ directory + - class_A + - img_A1
           :
           + - class_E
 """
-class ImagePathDataset(GeneralDatasetRoot):
+class ImagePathDataset(GeneralDatasetRootMixin):
     def __init__(self, directory, shuffle=False):
         super().__init__()
 
@@ -128,7 +139,7 @@ class ImagePathDataset(GeneralDatasetRoot):
     def __len__(self):
         return self.n_instances
     
-class ImageDataset(GeneralDatasetChain):
+class ImageLoader(GeneralDatasetChainMixin):
     def __init__(self):
         super().__init__()
 
@@ -141,7 +152,7 @@ class ImageDataset(GeneralDatasetChain):
         return np.concatenate(tmp), y
 
 from general_dataset.preprocess import Rescale, Shift
-class AugmentedImgDataset1(GeneralDatasetChain):
+class AugmentedImgChain1(GeneralDatasetChainMixin):
     def __init__(self):
         super().__init__()
         self.preprocess_fn = np.vectorize(Rescale(1/255.))
@@ -150,7 +161,7 @@ class AugmentedImgDataset1(GeneralDatasetChain):
         x, y = x_y
         return self.preprocess_fn(x), y
 
-class AugmentedImgDataset2(GeneralDatasetChain):
+class AugmentedImgChain2(GeneralDatasetChainMixin):
     def __init__(self):
         super().__init__()
         #self.preprocess_fn = np.vectorize(Shift(wShiftRange=0.5, hShiftRange=0.5))
@@ -173,7 +184,7 @@ class AugmentedImgDataset2(GeneralDatasetChain):
 
         return new_x, y
 
-class ExpandImageDataset(GeneralDatasetChain):
+class ExpandImageChain(GeneralDatasetChainMixin):
     def __init__(self):
         super().__init__()
 
@@ -183,6 +194,7 @@ class ExpandImageDataset(GeneralDatasetChain):
         tmp_y = []
         for xi, yi in zip(x, y):
             xi = xi[np.newaxis,...]
+            yi = yi[np.newaxis,...]
             tmp_x += [xi, xi]
             tmp_y += [yi, yi]
         return np.concatenate(tmp_x), np.concatenate(tmp_y)
