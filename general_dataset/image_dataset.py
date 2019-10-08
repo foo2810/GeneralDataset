@@ -123,7 +123,7 @@ class ImagePathDataset(GeneralDatasetRoot):
     def __getitem__(self, idx):
         if idx < 0 or idx >= self.n_instances:
             raise IndexError(idx)
-        return self.instance_list[idx][np.newaxis,:,:,:], self.label_list[idx][np.newaxis,:,:,:]
+        return np.array([self.instance_list[idx]]), np.array([self.label_list[idx]])
     
     def __len__(self):
         return self.n_instances
@@ -136,7 +136,8 @@ class ImageDataset(GeneralDatasetChain):
         x, y = x_y
         tmp = []
         for xi in x:
-            tmp.append(np.array(Image.open(xi)))
+            img = np.array(Image.open(xi))[np.newaxis,...]
+            tmp.append(img)
         return np.concatenate(tmp), y
 
 from general_dataset.preprocess import Rescale, Shift
@@ -157,13 +158,15 @@ class AugmentedImgDataset2(GeneralDatasetChain):
 
     def forward(self, x_y):
         x, y = x_y
-        tmp_x = []
-        for xi, _ in zip(x, y):
-            tmp_x.append(self.preprocess_fn(xi))
-
+        
         if len(x) == 1:
-            new_x = tmp_x[-1][np.newaxis,...]
+            new_x = self.preprocess_fn(x[-1])[np.newaxis,...]
         elif len(x) > 1:
+            tmp_x = []
+            for xi, _ in zip(x, y):
+                pimg = self.preprocess_fn(xi)[np.newaxis,...]
+                tmp_x.append(pimg)
+
             new_x = np.concatenate(tmp_x)
         else:
             raise RuntimeError("len(x) <= 0 - AugmentedImgDataset2")
@@ -179,6 +182,7 @@ class ExpandImageDataset(GeneralDatasetChain):
         tmp_x = []
         tmp_y = []
         for xi, yi in zip(x, y):
+            xi = xi[np.newaxis,...]
             tmp_x += [xi, xi]
             tmp_y += [yi, yi]
         return np.concatenate(tmp_x), np.concatenate(tmp_y)
