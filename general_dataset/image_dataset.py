@@ -30,9 +30,9 @@ class STL10(GeneralDatasetRoot):
     def load_data(self):
         self._download_and_extract()
 
-        labeled_images_fpath = self.save_dir / "train_X.bin"
-        labels_fpath = self.save_dir / "train_y.bin"
-        #unlabeled_images_fpath = self.save_dir / "unlabeled_X.bin"
+        labeled_images_fpath = self.save_dir / self.bin_name / "train_X.bin"
+        labels_fpath = self.save_dir / self.bin_name / "train_y.bin"
+        #unlabeled_images_fpath = self.save_dir / self.bin_name / "unlabeled_X.bin"
 
         with labeled_images_fpath.open("rb") as st:
             labeled_images = np.fromfile(st, dtype=np.uint8)
