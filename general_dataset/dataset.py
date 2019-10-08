@@ -50,7 +50,7 @@ class _BufferedGetter:
         self.out_length = len(self._buffer[0])
     
     def _area_check(self, idx):
-        if self._pre_idx <= idx and idx <= self._suf_idx:
+        if idx >= self._pre_idx and idx <= self._suf_idx:
             return True
         else:
             return False
