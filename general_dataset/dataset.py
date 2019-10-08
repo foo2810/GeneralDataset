@@ -22,8 +22,8 @@ class _NodeChain(GeneralDatasetChainMixin):
     def __init__(self):
         super().__init__()
     
-    def forward(self, x):
-        return [x]
+    def forward(self, x_y):
+        return x_y[0], x_y[1]
 
 class _BufferedGetter:
     def __init__(self, gdataset):
