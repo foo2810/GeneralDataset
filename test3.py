@@ -70,11 +70,11 @@ def test_stl():
 
 class MyDataset2(GeneralDatasetMixin):
     def __init__(self, root):
+        super().__init__(root)
         self.root = root
         self.img_loader = ImageLoader()
         self.aug2 = AugmentedImgChain2()
         self.expand = ExpandImageChain()
-        super().__init__(root)
 
     def get_item(self, root_idx):
         x_y = self.root[root_idx]

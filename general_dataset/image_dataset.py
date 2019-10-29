@@ -70,6 +70,7 @@ class STL10(GeneralDatasetRootMixin):
     def __len__(self):
         return len(self.labeled_images)
 
+"""
 class STL10Dataset(GeneralDatasetMixin):
     def __init__(self, kind="train", save_dir="./"):
         self.kind = kind
@@ -80,6 +81,7 @@ class STL10Dataset(GeneralDatasetMixin):
     
     def get_item(self, root_idx):
         return self.stl10[root_idx]
+"""
     
 
 # クラスごとにディレクトリで分けられている構造のデータセットからパスを出力するデータセットを作成

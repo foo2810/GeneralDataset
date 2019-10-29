@@ -42,7 +42,7 @@ class GeneralDataset(GeneralDatasetMixin):
         self._buffered_getter = _BufferedGetter(self)
         self.n_instances = self._buffered_getter.calc_n_instances()
         """
-        super().__init__(in_chain)
+        super().__init__(in_chain, out_chain)
         
     # 廃止予定
     """

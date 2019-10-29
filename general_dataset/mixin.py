@@ -44,6 +44,7 @@ class _BufferedGetter:
     def _update_buffer(self, idx, size=None):
         new_root_idx = idx // self.out_length
         self._buffer = self.gdataset.get_item(new_root_idx)
+        self.out_length = len(self._buffer[0])
         self._suf_idx = (new_root_idx + 1) * self.out_length - 1
         self._pre_idx = new_root_idx * self.out_length
         self._cur_root_idx = new_root_idx
@@ -169,10 +170,11 @@ class GeneralDatasetChainMixin(GeneralDatasetChainBase):
 # _buffered_getterの初期化ではGeneralDatasetMixinのサブクラスのforwardを呼び出す
 # そのためこれを継承したクラスはsuper().__init__は__init__の最後で呼ぶのがベター
 class GeneralDatasetMixin(GeneralDatasetChainBase):
-    def __init__(self, root, no_buffer=False):
+    def __init__(self, root, chain, no_buffer=False):
         super().__init__("dataset")
 
         self.root = root    # rootはGeneralDatasetMixinのサブクラスかGeneralDatasetRoot
+        self.chain = chain
         # _buffered_getterを無効にするフラグメモリを節約したいときに使う(for expert)
         self.no_buffer = no_buffer
         self._buffered_getter = _BufferedGetter(self)
@@ -200,7 +202,8 @@ class GeneralDatasetMixin(GeneralDatasetChainBase):
 
     # flow時の起点として発火
     def get_item(self, root_idx):
-        raise NotImplementedError
+        #raise NotImplementedError
+        return self.chain.forward(self.root(root_idx))
 
     # 1 instanceを返す
     def __getitem__(self, idx):
